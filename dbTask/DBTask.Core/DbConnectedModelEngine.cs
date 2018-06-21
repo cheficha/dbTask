@@ -10,26 +10,25 @@ namespace DBTask.Core
 {
     public class DbConnectedModelEngine
     {
-        public DbConnectedModelEngine(IDbConnection connection, IDbCommand command)
+        public DbConnectedModelEngine(SqlConnection connection, SqlCommand command)
         {
             this.Connection = connection;
             this.Command = command;
         }
 
-        public IDbConnection Connection { get; private set; }
-        public IDbCommand Command { get; set; }
+        public SqlConnection Connection { get; private set; }
+        public SqlCommand Command { get; set; }
 
-        public void ConfigureCommand(string text, CommandType type, IDbConnection connection)
+        private void ConfigureCommand(string text, CommandType type)
         {
-            using (this.Command.Connection)
-            {
-                this.Command.Connection = connection;
-                this.Command.Connection.Open();
-                this.Command.CommandText = text;
-                this.Command.CommandType = type;
-                this.Command.ExecuteNonQuery();
+            ConfigConnectionString();
+            this.Command.Connection = this.Connection;
 
-            };
+            this.Command.CommandText = text;
+            this.Command.CommandType = type;
+
+
+
         }
         private void ConfigConnectionString()
         {
@@ -51,11 +50,36 @@ namespace DBTask.Core
             this.Command.Parameters.Add(date);
             this.Command.Parameters.Add(IsActive);
         }
+        public void RunStoredProcedure(SqlCommand Command)
+        {
+            this.Command.Connection.Open();
+            this.Command.ExecuteNonQuery();
+            this.Command.Connection.Close();
+        }
         public void Run()
         {
+            var input = string.Empty;
+            while (input != "exit")
+            {
+                input = Console.ReadLine();
+                var inputLine = input.Split().ToList();
+                var spName = inputLine[0];
+                switch (spName)
+                {
+                    case "AddEvent":
+                        this.ConfigureCommand("AddEvent",CommandType.StoredProcedure);
+                        this.AddParametersToACommand(int.Parse(inputLine[1]), inputLine[2], inputLine[3], bool.Parse(inputLine[4]));
+                        RunStoredProcedure(this.Command);
+                        Console.WriteLine("good");
 
+
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
-       
+
     }
 }
